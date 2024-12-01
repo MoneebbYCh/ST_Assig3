@@ -30,7 +30,7 @@ jobs:
 
     - name: Upload Test Results (optional)
       if: failure()
-      uses: actions/upload-artifact@v2
+      uses: actions/upload-artifact@v3
       with:
         name: test-results
         path: target/test-*.xml  # Adjust this path based on where your test results are stored
