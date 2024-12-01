@@ -1,0 +1,63 @@
+name: Java CI Workflow
+
+on:
+  push:
+    branches:
+      - main
+  pull_request:
+    branches:
+      - main
+
+jobs:
+  test:
+    runs-on: ubuntu-latest
+
+    services:
+      mysql:
+        image: mysql:8.0
+        ports:
+          - 3306:3306
+        env:
+          MYSQL_ROOT_PASSWORD: monemonemone
+          MYSQL_DATABASE: softwaretesting
+        options: --health-cmd='mysqladmin ping --silent' --health-interval=10s --health-timeout=5s --health-retries=3
+
+    steps:
+    - name: Checkout code
+      uses: actions/checkout@v3
+
+    - name: Install Java
+      uses: actions/setup-java@v3
+      with:
+        java-version: '17'  # Adjust Java version if needed
+        distribution: 'temurin'
+
+    - name: Install MySQL Client
+      run: |
+        sudo apt-get update
+        sudo apt-get install -y mysql-client
+
+    - name: Set up MySQL Database
+      run: |
+        mysql -h 127.0.0.1 -u root -pmonemonemone -e "
+        CREATE DATABASE IF NOT EXISTS softwaretesting;
+        USE softwaretesting;
+        CREATE TABLE User (
+          id INT AUTO_INCREMENT PRIMARY KEY,
+          Email VARCHAR(255) NOT NULL UNIQUE,
+          Name VARCHAR(255) NOT NULL
+        );
+        INSERT INTO User (Email, Name) VALUES
+          ('johndoe@example.com', 'John Doe'),
+          ('janedoe@example.com', 'Jane Doe');
+        "
+
+    - name: Compile Java Files
+      run: |
+        javac -cp .:junit-platform-console-standalone-1.9.2.jar LoginApp.java LoginAppTest.java
+
+    - name: Run Tests
+      run: |
+        java -jar junit-platform-console-standalone-1.9.2.jar \
+          --class-path . \
+          --scan-classpath
