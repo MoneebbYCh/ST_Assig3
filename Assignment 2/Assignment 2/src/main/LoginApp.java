@@ -1,3 +1,5 @@
+package main;
+
 import javax.swing.*;
 import java.awt.*;
 import java.awt.event.ActionEvent;
@@ -10,9 +12,9 @@ import java.sql.ResultSet;
 public class LoginApp extends JFrame {
     private JTextField emailField;
     private JPasswordField passwordField;
-    private static final String DB_URL = "jdbc:mysql://localhost:3306/softwaretesting";
+    private static final String DB_URL = "jdbc:mysql://localhost:3306/world";
     private static final String DB_USER = "root";
-    private static final String DB_PASSWORD = "12345678";
+    private static final String DB_PASSWORD = "monemonemone";
 
     public LoginApp() {
         setTitle("Login Screen");
@@ -41,7 +43,7 @@ public class LoginApp extends JFrame {
         add(panel);
     }
 
-    private class LoginAction implements ActionListener {
+    public class LoginAction implements ActionListener {
         @Override
         public void actionPerformed(ActionEvent e) {
             String email = emailField.getText();
@@ -56,7 +58,8 @@ public class LoginApp extends JFrame {
         }
     }
 
-    private String authenticateUser(String email) {
+    public String authenticateUser(String email) {
+
         String userName = null;
         try (Connection conn = DriverManager.getConnection(DB_URL, DB_USER, DB_PASSWORD)) {
             String query = "SELECT name FROM User WHERE Email = ?";
