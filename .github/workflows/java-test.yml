@@ -1,5 +1,15 @@
+name: Java CI with Maven
+
+on:
+  push:
+    branches:
+      - main
+  pull_request:
+    branches:
+      - main
+
 jobs:
-  test:
+  build:
     runs-on: ubuntu-latest
 
     services:
