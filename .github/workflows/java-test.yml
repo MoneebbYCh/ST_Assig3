@@ -20,7 +20,7 @@ jobs:
         env:
           MYSQL_ROOT_PASSWORD: monemonemone
           MYSQL_DATABASE: softwaretesting
-        options: --health-cmd='mysqladmin ping --silent' --health-interval=10s --health-timeout=5s --health-retries=3
+        options: --health-cmd="mysqladmin --user=root --password=monemonemone ping" --health-interval=10s --health-timeout=5s --health-retries=3
 
     steps:
     - name: Checkout code
