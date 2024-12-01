@@ -1,4 +1,4 @@
-name: Java CI Workflow
+name: Java CI with MySQL Integration
 
 on:
   push:
@@ -20,44 +20,42 @@ jobs:
         env:
           MYSQL_ROOT_PASSWORD: monemonemone
           MYSQL_DATABASE: softwaretesting
-        options: --health-cmd='mysqladmin ping --silent' --health-interval=10s --health-timeout=5s --health-retries=3
+        options: >-
+          --health-cmd="mysqladmin ping -h 127.0.0.1 -uroot -pmonemonemone || exit 1"
+          --health-interval=10s
+          --health-timeout=5s
+          --health-retries=3
 
     steps:
     - name: Checkout code
       uses: actions/checkout@v3
 
-    - name: Install Java
+    - name: Set up JDK
       uses: actions/setup-java@v3
       with:
-        java-version: '17'  # Adjust Java version if needed
         distribution: 'temurin'
+        java-version: '17'
 
-    - name: Install MySQL Client
+    - name: Verify MySQL container health
       run: |
-        sudo apt-get update
-        sudo apt-get install -y mysql-client
+        echo "Waiting for MySQL to become healthy..."
+        for i in {1..30}; do
+          if docker inspect --format='{{json .State.Health.Status}}' $(docker ps -q --filter "name=mysql") | grep -q '"healthy"'; then
+            echo "MySQL is healthy!"
+            break
+          fi
+          echo "Waiting for MySQL..."
+          sleep 2
+        done
 
-    - name: Set up MySQL Database
+    - name: Set up MySQL database
       run: |
-        mysql -h 127.0.0.1 -u root -pmonemonemone -e "
-        CREATE DATABASE IF NOT EXISTS softwaretesting;
-        USE softwaretesting;
-        CREATE TABLE User (
-          id INT AUTO_INCREMENT PRIMARY KEY,
-          Email VARCHAR(255) NOT NULL UNIQUE,
-          Name VARCHAR(255) NOT NULL
-        );
-        INSERT INTO User (Email, Name) VALUES
-          ('johndoe@example.com', 'John Doe'),
-          ('janedoe@example.com', 'Jane Doe');
-        "
+        sudo apt-get update && sudo apt-get install -y mysql-client
+        mysql -h 127.0.0.1 -P 3306 -u root -pmonemonemone -e "CREATE TABLE IF NOT EXISTS User (Email VARCHAR(255) PRIMARY KEY, Name VARCHAR(255));"
+        mysql -h 127.0.0.1 -P 3306 -u root -pmonemonemone -e "INSERT INTO User (Email, Name) VALUES ('johndoe@example.com', 'John Doe');"
 
-    - name: Compile Java Files
-      run: |
-        javac -cp .:junit-platform-console-standalone-1.9.2.jar LoginApp.java LoginAppTest.java
+    - name: Compile Java Code
+      run: javac -d . LoginApp.java test/LoginAppTest.java
 
     - name: Run Tests
-      run: |
-        java -jar junit-platform-console-standalone-1.9.2.jar \
-          --class-path . \
-          --scan-classpath
+      run: java -cp .:junit-5.8.2.jar:hamcrest-2.2.jar org.junit.platform.console.ConsoleLauncher --select-class test.LoginAppTest
