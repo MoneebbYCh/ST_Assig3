@@ -1,62 +1,36 @@
-name: Java CI with Maven
+name: Java CI/CD Pipeline
 
 on:
   push:
     branches:
-      - main
+      - '*'
   pull_request:
     branches:
       - main
+      - master
 
 jobs:
   build:
     runs-on: ubuntu-latest
 
-    services:
-      mysql:
-        image: mysql:8.0
-        ports:
-          - 3306:3306
-        env:
-          MYSQL_ROOT_PASSWORD: monemonemone
-          MYSQL_DATABASE: softwaretesting
-        options: --health-cmd="mysqladmin --user=root --password=monemonemone ping" --health-interval=10s --health-timeout=5s --health-retries=3
-
     steps:
-    - name: Checkout code
-      uses: actions/checkout@v3
+    - name: Check out the code
+      uses: actions/checkout@v2
 
-    - name: Install Java
-      uses: actions/setup-java@v3
+    - name: Set up Java
+      uses: actions/setup-java@v2
       with:
-        java-version: '17'
+        java-version: '11'  # Use the required Java version for your project
 
-    - name: Install MySQL Client
-      run: |
-        sudo apt-get update
-        sudo apt-get install -y mysql-client
+    - name: Build with Maven
+      run: mvn clean install  # If you're using Maven for build; use the relevant build command for your project
 
-    - name: Set up MySQL Database
-      run: |
-        mysql -h 127.0.0.1 -u root -pmonemonemone -e "
-        CREATE DATABASE IF NOT EXISTS softwaretesting;
-        USE softwaretesting;
-        CREATE TABLE User (
-          id INT AUTO_INCREMENT PRIMARY KEY,
-          Email VARCHAR(255) NOT NULL UNIQUE,
-          Name VARCHAR(255) NOT NULL
-        );
-        INSERT INTO User (Email, Name) VALUES
-          ('johndoe@example.com', 'John Doe'),
-          ('janedoe@example.com', 'Jane Doe');
-        "
+    - name: Run Unit Tests
+      run: mvn test  # Use the relevant command for running unit tests
 
-    - name: Compile Java Files
-      run: |
-        javac -cp .:junit-platform-console-standalone-1.9.2.jar:./src/main/java LoginApp.java LoginAppTest.java
-
-    - name: Run Tests
-      run: |
-        java -jar junit-platform-console-standalone-1.9.2.jar \
-          --class-path . \
-          --scan-classpath
+    - name: Upload Test Results (optional)
+      if: failure()
+      uses: actions/upload-artifact@v3
+      with:
+        name: test-results
+        path: target/test-*.xml  # Adjust this path based on where your test results are stored
