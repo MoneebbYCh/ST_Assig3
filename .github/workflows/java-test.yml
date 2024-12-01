@@ -49,11 +49,12 @@ jobs:
         done
 
     - name: Set up MySQL database
-      run: |
-        sudo apt-get update && sudo apt-get install -y mysql-client
-        mysql -h 127.0.0.1 -P 3306 -u root -pmonemonemone -e "CREATE TABLE IF NOT EXISTS User (Email VARCHAR(255) PRIMARY KEY, Name VARCHAR(255));"
-        mysql -h 127.0.0.1 -P 3306 -u root -pmonemonemone -e "INSERT INTO User (Email, Name) VALUES ('johndoe@example.com', 'John Doe');"
-
+    run: |
+      sudo apt-get update && sudo apt-get install -y mysql-client
+      mysql -h 127.0.0.1 -P 3306 -u root -pmonemonemone -e "CREATE DATABASE IF NOT EXISTS softwaretesting;"
+      mysql -h 127.0.0.1 -P 3306 -u root -pmonemonemone softwaretesting -e "CREATE TABLE IF NOT EXISTS User (Email VARCHAR(255) PRIMARY KEY, Name VARCHAR(255));"
+      mysql -h 127.0.0.1 -P 3306 -u root -pmonemonemone softwaretesting -e "INSERT INTO User (Email, Name) VALUES ('johndoe@example.com', 'John Doe');"
+  
     - name: Compile Java Code
       run: javac -d . LoginApp.java test/LoginAppTest.java
 
