@@ -1,34 +1,63 @@
-name: Java Test Workflow
+name: Java CI Workflow
 
 on:
+  push:
+    branches:
+      - main
   pull_request:
     branches:
       - main
 
 jobs:
-  build-and-test:
+  test:
     runs-on: ubuntu-latest
+
+    services:
+      mysql:
+        image: mysql:8.0
+        ports:
+          - 3306:3306
+        env:
+          MYSQL_ROOT_PASSWORD: monemonemone
+          MYSQL_DATABASE: softwaretesting
+        options: --health-cmd='mysqladmin ping --silent' --health-interval=10s --health-timeout=5s --health-retries=3
 
     steps:
     - name: Checkout code
       uses: actions/checkout@v3
 
-    - name: Set up Java
+    - name: Install Java
       uses: actions/setup-java@v3
       with:
-        java-version: '23'
+        java-version: '17'  # Adjust Java version if needed
         distribution: 'temurin'
 
-    - name: Download JUnit dependencies
+    - name: Install MySQL Client
       run: |
-        wget https://repo1.maven.org/maven2/org/junit/jupiter/junit-jupiter-api/5.8.2/junit-jupiter-api-5.8.2.jar
-        wget https://repo1.maven.org/maven2/org/junit/jupiter/junit-jupiter-engine/5.8.2/junit-jupiter-engine-5.8.2.jar
-        wget https://repo1.maven.org/maven2/org/hamcrest/hamcrest/2.2/hamcrest-2.2.jar
+        sudo apt-get update
+        sudo apt-get install -y mysql-client
 
-    - name: Compile Java code
-      run: javac -d out -cp .:junit-jupiter-api-5.8.2.jar:junit-jupiter-engine-5.8.2.jar:hamcrest-2.2.jar LoginApp.java LoginAppTest.java
-      working-directory: ./
+    - name: Set up MySQL Database
+      run: |
+        mysql -h 127.0.0.1 -u root -pmonemonemone -e "
+        CREATE DATABASE IF NOT EXISTS softwaretesting;
+        USE softwaretesting;
+        CREATE TABLE User (
+          id INT AUTO_INCREMENT PRIMARY KEY,
+          Email VARCHAR(255) NOT NULL UNIQUE,
+          Name VARCHAR(255) NOT NULL
+        );
+        INSERT INTO User (Email, Name) VALUES
+          ('johndoe@example.com', 'John Doe'),
+          ('janedoe@example.com', 'Jane Doe');
+        "
 
-    - name: Run Test Cases
-      run: java -cp out:junit-jupiter-api-5.8.2.jar:junit-jupiter-engine-5.8.2.jar:hamcrest-2.2.jar org.junit.platform.console.ConsoleLauncher --select-class LoginAppTest
-      working-directory: ./
+    - name: Compile Java Files
+      run: |
+        javac -cp .:junit-platform-console-standalone-1.9.2.jar LoginApp.java LoginAppTest.java
+
+    - name: Run Tests
+      run: |
+        java -jar junit-platform-console-standalone-1.9.2.jar \
+          --class-path . \
+          --scan-classpath
