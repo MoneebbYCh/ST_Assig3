@@ -17,12 +17,18 @@ jobs:
       uses: actions/setup-java@v3
       with:
         java-version: '23'
-        distribution: 'temurin'  # Specify the JDK distribution
+        distribution: 'temurin'
+
+    - name: Download JUnit dependencies
+      run: |
+        wget https://repo1.maven.org/maven2/org/junit/jupiter/junit-jupiter-api/5.8.2/junit-jupiter-api-5.8.2.jar
+        wget https://repo1.maven.org/maven2/org/junit/jupiter/junit-jupiter-engine/5.8.2/junit-jupiter-engine-5.8.2.jar
+        wget https://repo1.maven.org/maven2/org/hamcrest/hamcrest/2.2/hamcrest-2.2.jar
 
     - name: Compile Java code
-      run: javac -d out LoginApp.java LoginAppTest.java
+      run: javac -d out -cp .:junit-jupiter-api-5.8.2.jar:junit-jupiter-engine-5.8.2.jar:hamcrest-2.2.jar LoginApp.java LoginAppTest.java
       working-directory: ./
 
     - name: Run Test Cases
-      run: java -cp out LoginAppTest
+      run: java -cp out:junit-jupiter-api-5.8.2.jar:junit-jupiter-engine-5.8.2.jar:hamcrest-2.2.jar org.junit.platform.console.ConsoleLauncher --select-class LoginAppTest
       working-directory: ./
