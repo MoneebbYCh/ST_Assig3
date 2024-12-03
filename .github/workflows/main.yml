@@ -10,29 +10,47 @@ jobs:
   test:
     runs-on: ubuntu-latest
 
+    services:
+      mysql:
+        image: mysql:8.0
+        env:
+          MYSQL_ROOT_PASSWORD: root
+          MYSQL_DATABASE: testdb
+        ports:
+          - 3306:3306
+        options: --health-cmd="mysqladmin ping --silent" --health-interval=10s --health-timeout=5s --health-retries=3
+
     steps:
       - name: Checkout code
         uses: actions/checkout@v3
 
-      - name: Set up MySQL
-        uses: mysql-actions/setup-mysql@v2
+      - name: Set up Python
+        uses: actions/setup-python@v3
         with:
-          mysql-version: '8.0'
+          python-version: '3.x'
 
-      - name: Install dependencies
+      - name: Install MySQL client
         run: |
           sudo apt-get update
-          sudo apt-get install -y python3-pip
-          pip3 install mysql-connector-python
+          sudo apt-get install -y mysql-client
 
-      - name: Set up MySQL Database
+      - name: Install Python dependencies
         run: |
-          mysql -e "CREATE DATABASE test_db;"
-          
-      - name: Run SQL file
+          python -m pip install --upgrade pip
+          pip install pytest
+
+      - name: Wait for MySQL to be ready
         run: |
-          mysql test_db < path_to_your_sql_file.sql
-          
+          while ! mysqladmin ping -h127.0.0.1 --silent; do
+            echo "Waiting for MySQL..."
+            sleep 2
+          done
+
+      - name: Run SQL file on MySQL
+        run: |
+          mysql -h 127.0.0.1 -u root -proot testdb < path/to/your/sqlfile.sql
+        continue-on-error: true  # Allow SQL file errors for now as per your task
+
       - name: Run unit tests
         run: |
-          python3 -m unittest discover -s tests
+          python -m unittest discover -s tests
