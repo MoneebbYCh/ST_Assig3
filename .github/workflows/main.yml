@@ -28,8 +28,11 @@ jobs:
       - name: Set up MySQL Database
         run: |
           mysql -e "CREATE DATABASE test_db;"
+          
+      - name: Run SQL file
+        run: |
           mysql test_db < path_to_your_sql_file.sql
-
+          
       - name: Run unit tests
         run: |
           python3 -m unittest discover -s tests
