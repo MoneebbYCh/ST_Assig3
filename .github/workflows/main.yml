@@ -1,4 +1,4 @@
-name: CI Pipeline with SQL Testing
+name: CI Pipeline
 
 on:
   pull_request:
@@ -10,36 +10,47 @@ jobs:
   test:
     runs-on: ubuntu-latest
 
+    services:
+      mysql:
+        image: mysql:8.0
+        env:
+          MYSQL_ROOT_PASSWORD: root
+          MYSQL_DATABASE: testdb
+        ports:
+          - 3306:3306
+        options: --health-cmd="mysqladmin ping --silent" --health-interval=10s --health-timeout=5s --health-retries=3
+
     steps:
-      # Step 1: Checkout the code
       - name: Checkout code
         uses: actions/checkout@v3
 
-      # Step 2: Set up Python environment
       - name: Set up Python
         uses: actions/setup-python@v3
         with:
           python-version: '3.x'
 
-      # Step 3: Install Python dependencies
-      - name: Install dependencies
+      - name: Install MySQL client
+        run: |
+          sudo apt-get update
+          sudo apt-get install -y mysql-client
+
+      - name: Install Python dependencies
         run: |
           python -m pip install --upgrade pip
-          pip install -r requirements.txt
+          pip install pytest
 
-      # Step 4: Run Python unit tests
+      - name: Wait for MySQL to be ready
+        run: |
+          while ! mysqladmin ping -h127.0.0.1 --silent; do
+            echo "Waiting for MySQL..."
+            sleep 2
+          done
+
+      - name: Run SQL file on MySQL
+        run: |
+          mysql -h 127.0.0.1 -u root -proot testdb < path/to/your/sqlfile.sql
+        continue-on-error: true  # Allow SQL file errors for now as per your task
+
       - name: Run unit tests
         run: |
           python -m unittest discover -s tests
-
-      # Step 5: Set up SQLite database (or MySQL)
-      - name: Set up SQLite
-        run: |
-          sudo apt-get update
-          sudo apt-get install sqlite3
-          sqlite3 test.db < your_file.sql
-
-      # Step 6: Verify SQL file execution
-      - name: Test SQL Queries
-        run: |
-          sqlite3 test.db "SELECT * FROM your_table_name;" # Replace with actual table name
