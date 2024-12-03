@@ -24,20 +24,16 @@ jobs:
       - name: Checkout code
         uses: actions/checkout@v3
 
-      - name: Set up Python
-        uses: actions/setup-python@v3
+      - name: Set up JDK
+        uses: actions/setup-java@v3
         with:
-          python-version: '3.x'
+          java-version: '17'  # Change this to your project's Java version
+          distribution: 'adoptopenjdk'
 
       - name: Install MySQL client
         run: |
           sudo apt-get update
           sudo apt-get install -y mysql-client
-
-      - name: Install Python dependencies
-        run: |
-          python -m pip install --upgrade pip
-          pip install pytest
 
       - name: Wait for MySQL to be ready
         run: |
@@ -51,7 +47,6 @@ jobs:
           mysql -h 127.0.0.1 -u root -proot testdb < path/to/your/sqlfile.sql
         continue-on-error: true  # Allow SQL file errors for now as per your task
 
-      - name: Run unit tests
-        run: |
-          python -m unittest discover -s . -p "test_*.py"
+      - name: Build and Test with Maven
+        run: mvn clean test  # Runs your JUnit tests
 
