@@ -28,7 +28,7 @@ jobs:
       - name: Set up MySQL Database
         run: |
           mysql -e "CREATE DATABASE IF NOT EXISTS test_db;" # Create the test database
-          mysql test_db < ./path_to_your_sql_file.sql  # Ensure the SQL file path is correct
+          mysql test_db < ./A2.sql  
 
       - name: Run unit tests
         run: |
