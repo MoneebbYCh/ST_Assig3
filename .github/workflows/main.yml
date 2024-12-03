@@ -47,6 +47,5 @@ jobs:
           mysql -h 127.0.0.1 -u root -proot testdb < path/to/your/sqlfile.sql
         continue-on-error: true  # Allow SQL file errors for now as per your task
 
-      - name: Build and Test with Maven
-        run: mvn clean test  # Runs your JUnit tests
-
+      - name: Build and Test with Gradle
+        run: ./gradlew test  # Runs your JUnit tests with Gradle
