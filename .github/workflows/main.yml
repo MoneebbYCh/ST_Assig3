@@ -10,42 +10,26 @@ jobs:
   test:
     runs-on: ubuntu-latest
 
-    services:
-      mysql:
-        image: mysql:8.0
-        env:
-          MYSQL_ROOT_PASSWORD: root
-          MYSQL_DATABASE: testdb
-        ports:
-          - 3306:3306
-        options: --health-cmd="mysqladmin ping --silent" --health-interval=10s --health-timeout=5s --health-retries=3
-
     steps:
       - name: Checkout code
         uses: actions/checkout@v3
 
-      - name: Set up JDK
-        uses: actions/setup-java@v3
+      - name: Set up MySQL
+        uses: mysql-actions/setup-mysql@v2
         with:
-          java-version: '17'  # Change this to your project's Java version
-          distribution: 'adoptopenjdk'
+          mysql-version: '8.0'
 
-      - name: Install MySQL client
+      - name: Install dependencies
         run: |
           sudo apt-get update
-          sudo apt-get install -y mysql-client
+          sudo apt-get install -y python3-pip
+          pip3 install mysql-connector-python
 
-      - name: Wait for MySQL to be ready
+      - name: Set up MySQL Database
         run: |
-          while ! mysqladmin ping -h127.0.0.1 --silent; do
-            echo "Waiting for MySQL..."
-            sleep 2
-          done
+          mysql -e "CREATE DATABASE IF NOT EXISTS test_db;" # Create the test database
+          mysql test_db < ./path_to_your_sql_file.sql  # Ensure the SQL file path is correct
 
-      - name: Run SQL file on MySQL
+      - name: Run unit tests
         run: |
-          mysql -h 127.0.0.1 -u root -proot testdb < path/to/your/sqlfile.sql
-        continue-on-error: true  # Allow SQL file errors for now as per your task
-
-      - name: Build and Test with Gradle
-        run: ./gradlew test  # Runs your JUnit tests with Gradle
+          python3 -m unittest discover -s . -p "test_*.py"  # Update test directory if needed
