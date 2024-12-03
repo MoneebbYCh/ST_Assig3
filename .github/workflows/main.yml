@@ -1,4 +1,4 @@
-name: CI Pipeline
+name: CI Pipeline with SQL Testing
 
 on:
   pull_request:
@@ -11,19 +11,35 @@ jobs:
     runs-on: ubuntu-latest
 
     steps:
+      # Step 1: Checkout the code
       - name: Checkout code
         uses: actions/checkout@v3
 
+      # Step 2: Set up Python environment
       - name: Set up Python
         uses: actions/setup-python@v3
         with:
           python-version: '3.x'
 
-      - name: Install unittest (if required)
+      # Step 3: Install Python dependencies
+      - name: Install dependencies
         run: |
           python -m pip install --upgrade pip
-          pip install unittest-xml-reporting || true  # Skips if unittest is already available
+          pip install -r requirements.txt
 
+      # Step 4: Run Python unit tests
       - name: Run unit tests
         run: |
-          python -m unittest discover -s tests || echo "No tests found or tests failed"
+          python -m unittest discover -s tests
+
+      # Step 5: Set up SQLite database (or MySQL)
+      - name: Set up SQLite
+        run: |
+          sudo apt-get update
+          sudo apt-get install sqlite3
+          sqlite3 test.db < your_file.sql
+
+      # Step 6: Verify SQL file execution
+      - name: Test SQL Queries
+        run: |
+          sqlite3 test.db "SELECT * FROM your_table_name;" # Replace with actual table name
